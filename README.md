@@ -64,5 +64,7 @@ This project strictly integrates 7 Google Cloud Services:
 4. Run `npm run dev` to start the development server
 5. Run `npx vitest run` to execute the test suite
 
+🚀 **Live Demo:** [https://voteiq-77954748872.europe-west1.run.app/](https://voteiq-77954748872.europe-west1.run.app/)
+
 ## License
 MIT License.
