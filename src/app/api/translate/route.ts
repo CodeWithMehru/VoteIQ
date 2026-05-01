@@ -21,10 +21,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ translations: texts });
     }
 
-    const [translations] = await translate.translate(texts, targetLanguage);
+    const response = await translate.translate(texts, targetLanguage);
+    const translations = response[0];
 
     return NextResponse.json({ translations });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Translate API Error:', error);
     // Graceful fallback to return the original text
     const { texts } = await request.json().catch(() => ({ texts: [] }));

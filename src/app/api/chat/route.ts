@@ -12,16 +12,17 @@ export async function POST(request: Request) {
     const reply = await getChatResponse(message);
     
     return NextResponse.json({ reply });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Chat API Error:', error);
-    if (error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('Quota')) {
+    const err = error as { status?: number; message?: string };
+    if (err?.status === 429 || err?.message?.includes('429') || err?.message?.includes('Quota')) {
       return NextResponse.json(
         { error: 'Google Cloud is currently syncing billing quota. Please wait.' },
         { status: 429 }
       );
     }
     return NextResponse.json(
-      { error: error.message || 'Failed to process chat request' },
+      { error: err?.message || 'Failed to process chat request' },
       { status: 500 }
     );
   }

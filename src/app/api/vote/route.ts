@@ -69,16 +69,18 @@ export async function POST(request: Request) {
       verificationHash
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Vote API Error:', error);
     
-    if (error?.message === 'ALREADY_VOTED') {
+    const err = error as { message?: string; code?: string };
+    
+    if (err?.message === 'ALREADY_VOTED') {
       return NextResponse.json({ error: "ALREADY_VOTED", message: "This Voter ID has already claimed a vote." }, { status: 403 });
     }
     
-    if (error?.code === 'PERMISSION_DENIED' || error?.message?.includes('PERMISSION_DENIED') || error?.message?.includes('SERVICE_DISABLED')) {
+    if (err?.code === 'PERMISSION_DENIED' || err?.message?.includes('PERMISSION_DENIED') || err?.message?.includes('SERVICE_DISABLED')) {
       return NextResponse.json(
-        { error: error.message },
+        { error: err.message },
         { status: 500 }
       );
     }

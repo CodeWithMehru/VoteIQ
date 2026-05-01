@@ -71,6 +71,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (language === 'en') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStrings(ENGLISH_STRINGS);
       return;
     }
@@ -90,7 +91,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         
         if (data.translations && data.translations.length === texts.length) {
-          const newStrings: any = {};
+          const newStrings: Record<string, string> = {};
           keys.forEach((key, idx) => {
             newStrings[key] = data.translations[idx];
           });

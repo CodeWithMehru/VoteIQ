@@ -92,7 +92,7 @@ export default function MockEVM() {
       
       // Play beep sound for EVM simulation
       try {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
         const ctx = new AudioContext();
         const osc = ctx.createOscillator();
         osc.type = 'sine';
@@ -103,7 +103,8 @@ export default function MockEVM() {
       } catch(e) {
         // Ignore audio errors
       }
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       setError(err.message || 'An error occurred');
     } finally {
       setIsSubmitting(false);
@@ -178,8 +179,11 @@ export default function MockEVM() {
                   autoCorrect="off"
                   spellCheck="false"
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                  placeholder="John Doe"
+                  aria-required="true"
+                  aria-label={strings.full_name}
+                  tabIndex={0}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                  placeholder="Jane Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -194,7 +198,10 @@ export default function MockEVM() {
                   autoCorrect="off"
                   spellCheck="false"
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                  aria-required="true"
+                  aria-label={strings.voter_id}
+                  tabIndex={0}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                   placeholder="ABC1234567"
                   value={idNumber}
                   onChange={(e) => setIdNumber(e.target.value)}
@@ -237,8 +244,9 @@ export default function MockEVM() {
                   <button
                     onClick={() => handleVote(c.id)}
                     disabled={isSubmitting}
-                    className="ml-4 w-16 h-12 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-500/20"
-                    aria-label={`Vote for ${c.name}`}
+                    className="ml-4 w-16 h-12 rounded-lg bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-400 active:scale-95 text-white flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-500/20"
+                    aria-label={`Vote for ${c.name} of ${c.party}`}
+                    tabIndex={0}
                   >
                     {isSubmitting ? (
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

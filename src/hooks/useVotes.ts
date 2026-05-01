@@ -2,13 +2,22 @@ import { useState, useEffect } from 'react';
 import { db, collection, onSnapshot, query, orderBy } from '@/lib/firebase';
 import { VoteTally } from '@/lib/types';
 
+export interface VoteRecord {
+  id: string;
+  voterId: string;
+  name: string;
+  candidateId: string;
+  timestamp: number;
+}
+
 export function useVotes() {
   const [tally, setTally] = useState<VoteTally>({ partyA: 0, partyB: 0, partyC: 0, total: 0 });
-  const [castVotes, setCastVotes] = useState<any[]>([]);
+  const [castVotes, setCastVotes] = useState<VoteRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!db) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       return;
     }
@@ -33,14 +42,14 @@ export function useVotes() {
       });
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching vote tallies:", error);
+      console.error("Error subscribing to votes", (error as unknown));
       setLoading(false);
     });
 
     const q = query(collection(db, 'cast_votes'), orderBy('timestamp', 'desc'));
     const unsubVotes = onSnapshot(q, (snapshot) => {
-      const votes: any[] = [];
-      snapshot.forEach(doc => votes.push({ id: doc.id, ...doc.data() }));
+      const votes: VoteRecord[] = [];
+      snapshot.forEach(doc => votes.push({ id: doc.id, ...(doc.data() as Omit<VoteRecord, 'id'>) }));
       setCastVotes(votes);
     });
 

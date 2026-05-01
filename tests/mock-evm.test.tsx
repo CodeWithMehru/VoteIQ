@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import MockEVM from '@/components/MockEVM';
-import { AuthProvider } from '@/hooks/useAuth'; // Note: mocked
 
 // Mock useAuth
 vi.mock('@/hooks/useAuth', () => ({
@@ -16,7 +15,7 @@ global.fetch = vi.fn(() =>
     ok: true,
     json: () => Promise.resolve({ receipt: 'MOCK-RECEIPT' }),
   })
-) as any;
+) as jest.Mock;
 
 describe('MockEVM Component', () => {
   it('renders the initial verification step', () => {

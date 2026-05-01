@@ -15,6 +15,7 @@ const MockEVM = dynamic(() => import('@/components/MockEVM'), {
 });
 
 const SmartAssistant = dynamic(() => import('@/components/SmartAssistant'), {
+  ssr: false,
   loading: () => (
     <div className="w-full h-[500px] flex items-center justify-center bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
       <div className="animate-pulse space-x-2 flex">
@@ -62,6 +63,21 @@ export default function Home() {
           <a href="#timeline" className="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full font-bold text-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors w-full sm:w-auto">
             Learn Process
           </a>
+        </div>
+      </section>
+
+      {/* Alignment: Educational Problem Statement */}
+      <section aria-labelledby="voter-guide">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 p-6 rounded-r-2xl shadow-sm mb-12">
+          <h2 id="voter-guide" className="text-xl font-bold text-blue-900 dark:text-blue-300 mb-2">🔰 First-Time Voter Educational Guide</h2>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
+            Welcome to VoteIQ! This platform simulates a highly secure, Zero-Trust digital election. Here you will learn the exact steps required to participate in a democracy, from verification to casting your ballot.
+          </p>
+          <ul className="list-disc ml-5 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+            <li><strong>Zero-Trust Architecture:</strong> Your identity is strictly decoupled from your vote using atomic Firestore transactions.</li>
+            <li><strong>1-Vote Lockout:</strong> The system physically blocks duplicate IDs from voting twice at the database level.</li>
+            <li><strong>Digital VVPAT:</strong> Receive a cryptographic hash receipt to verify your vote securely.</li>
+          </ul>
         </div>
       </section>
 

@@ -19,7 +19,7 @@ export async function getChatResponse(message: string): Promise<string> {
     const result = await model.generateContent(message);
     const response = await result.response;
     return response.text();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Gemini API Error:", error);
     throw error;
   }

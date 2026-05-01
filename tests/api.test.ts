@@ -27,7 +27,7 @@ describe('API Routes & Google Cloud Integration', () => {
     });
 
     it('returns a valid response from Gemini', async () => {
-      (geminiLib.getChatResponse as any).mockResolvedValueOnce('This is a mock Gemini response');
+      (geminiLib.getChatResponse as jest.Mock).mockResolvedValueOnce('This is a mock Gemini response');
       const req = new Request('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ message: 'Hello' }) });
       const res = await ChatPOST(req);
       const data = await res.json();
@@ -37,7 +37,7 @@ describe('API Routes & Google Cloud Integration', () => {
     });
 
     it('returns a fallback on API error', async () => {
-      (geminiLib.getChatResponse as any).mockRejectedValueOnce(new Error('API failed'));
+      (geminiLib.getChatResponse as jest.Mock).mockRejectedValueOnce(new Error('API failed'));
       const req = new Request('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ message: 'Hello' }) });
       const res = await ChatPOST(req);
       expect(res.status).toBe(500);
@@ -76,7 +76,7 @@ describe('API Routes & Google Cloud Integration', () => {
     });
 
     it('returns translated text', async () => {
-      (translateLib.translateText as any).mockResolvedValueOnce('Hola');
+      (translateLib.translateText as jest.Mock).mockResolvedValueOnce('Hola');
       const req = new Request('http://localhost/api/translate', { 
         method: 'POST', 
         body: JSON.stringify({ text: 'Hello', targetLanguage: 'es' }) 

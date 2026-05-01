@@ -34,14 +34,14 @@ export default function BoothLocator() {
 
   const [, setMap] = useState(null);
 
-  const onLoad = useCallback(function callback(map: any) {
+  const onLoad = useCallback(function callback(map: google.maps.Map) {
     const bounds = new window.google.maps.LatLngBounds();
     MOCK_BOOTHS.forEach(booth => bounds.extend({ lat: booth.lat, lng: booth.lng }));
     map.fitBounds(bounds);
     setMap(map);
   }, []);
 
-  const onUnmount = useCallback(function callback(map: any) {
+  const onUnmount = useCallback(function callback(map: google.maps.Map) {
     setMap(null);
   }, []);
 

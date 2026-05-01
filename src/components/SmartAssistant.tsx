@@ -50,11 +50,12 @@ export default function SmartAssistant() {
       }
 
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply, timestamp: Date.now() }]);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       console.error(error);
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: error.message, 
+        content: `Sorry, I encountered an error: ${err.message || 'Please try again later.'}`,
         timestamp: Date.now() 
       }]);
     } finally {

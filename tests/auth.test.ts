@@ -37,7 +37,7 @@ describe('Auth Hook & Roles', () => {
 
   it('loginAnonymously calls Firebase signInAnonymously', async () => {
     const mockUser = { uid: 'anon-123' };
-    (firebaseLib.signInAnonymously as any).mockResolvedValueOnce({ user: mockUser });
+    (firebaseLib.signInAnonymously as jest.Mock).mockResolvedValueOnce({ user: mockUser });
     
     const { result } = renderHook(() => useAuth());
     
@@ -52,7 +52,7 @@ describe('Auth Hook & Roles', () => {
 
   it('loginWithGoogle calls Firebase signInWithPopup', async () => {
     const mockUser = { uid: 'google-123', displayName: 'Staff Name' };
-    (firebaseLib.signInWithPopup as any).mockResolvedValueOnce({ user: mockUser });
+    (firebaseLib.signInWithPopup as jest.Mock).mockResolvedValueOnce({ user: mockUser });
     
     const { result } = renderHook(() => useAuth());
     
@@ -80,7 +80,7 @@ describe('Auth Hook & Roles', () => {
   it('detects staff role based on displayName logic', async () => {
     // Override the mock for this test
     const { onAuthStateChanged } = await import('firebase/auth');
-    (onAuthStateChanged as any).mockImplementationOnce((auth: any, cb: any) => {
+    (onAuthStateChanged as jest.Mock).mockImplementationOnce((auth: unknown, cb: (user: unknown) => void) => {
       cb({ uid: 'staff-123', displayName: 'John', isAnonymous: false });
       return vi.fn();
     });
