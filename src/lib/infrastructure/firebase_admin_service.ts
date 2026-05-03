@@ -11,7 +11,7 @@ if (!admin.apps.length) {
         }),
       });
     } else {
-      console.warn("Firebase Admin credentials missing. Operating in offline/mock mode.");
+      console.warn('Firebase Admin credentials missing. Operating in offline/mock mode.');
     }
   } catch (error) {
     console.error('Firebase admin initialization error', error);

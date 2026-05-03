@@ -1,114 +1,75 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import { useVotes } from '@/hooks/useVotes';
 
-export default function LiveResults() {
+/**
+ * Singularity Hardened Live Results (Node 2: OffscreenCanvas)
+ */
+export default function LiveResults(): React.JSX.Element {
   const { tally, loading } = useVotes();
+  const [isPaused, setIsPaused] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const workerRef = useRef<Worker | null>(null);
+
+  useEffect(() => {
+    // Initialize Worker
+    workerRef.current = new Worker('/workers/chart-worker.js');
+    
+    // Transfer control to Offscreen
+    if (canvasRef.current) {
+      const offscreen = canvasRef.current.transferControlToOffscreen();
+      workerRef.current.postMessage({ canvas: offscreen }, [offscreen]);
+    }
+
+    return (): void => {
+      workerRef.current?.terminate();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (workerRef.current && tally && !isPaused) {
+      workerRef.current.postMessage({ tally });
+    }
+  }, [tally, isPaused]);
 
   if (loading) {
-    return (
-      <div className="w-full h-64 flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <div className="animate-pulse flex space-x-4">
-          <div className="h-12 w-12 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-          <div className="flex-1 space-y-4 py-1">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <div className="w-full h-64 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-2xl" />;
   }
 
-  const maxVotes = Math.max(tally.partyA, tally.partyB, tally.partyC, 1); // Avoid div by 0
-
-  const getPercentage = (votes: number) => {
-    return tally.total === 0 ? 0 : Math.round((votes / tally.total) * 100);
-  };
-
-  const getWidth = (votes: number) => {
-    return `${(votes / maxVotes) * 100}%`;
-  };
-
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-6 md:p-8 transition-colors duration-300">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-6 md:p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Live Mock Results</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Real-time simulation analytics</p>
+          <h2 className="text-2xl font-bold">Live Simulation Results</h2>
+          <button
+            onClick={() => setIsPaused(!isPaused)}
+            className={`mt-2 text-xs font-bold px-3 py-1 rounded-full border-2 transition-colors ${isPaused ? 'bg-orange-100 text-orange-700 border-orange-500' : 'bg-gray-100 text-gray-700 border-gray-300'}`}
+          >
+            {isPaused ? '▶ Resume Updates' : '⏸ Pause Updates'}
+          </button>
         </div>
-        <div className="flex flex-col items-end">
-          <span className="text-3xl font-black text-blue-600 dark:text-blue-400">{tally.total}</span>
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Votes</span>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        {/* Party A */}
-        <div>
-          <div className="flex justify-between items-end mb-2">
-            <span className="font-semibold text-gray-800 dark:text-gray-200">Party A</span>
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{tally.partyA} votes ({getPercentage(tally.partyA)}%)</span>
-          </div>
-          <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-4 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 h-4 rounded-full transition-all duration-1000 ease-out"
-              style={{ width: getWidth(tally.partyA) }}
-              role="progressbar"
-              aria-valuenow={getPercentage(tally.partyA)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            ></div>
-          </div>
-        </div>
-
-        {/* Party B */}
-        <div>
-          <div className="flex justify-between items-end mb-2">
-            <span className="font-semibold text-gray-800 dark:text-gray-200">Party B</span>
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{tally.partyB} votes ({getPercentage(tally.partyB)}%)</span>
-          </div>
-          <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-4 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-emerald-400 to-teal-500 h-4 rounded-full transition-all duration-1000 ease-out"
-              style={{ width: getWidth(tally.partyB) }}
-              role="progressbar"
-              aria-valuenow={getPercentage(tally.partyB)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            ></div>
-          </div>
-        </div>
-
-        {/* Party C */}
-        <div>
-          <div className="flex justify-between items-end mb-2">
-            <span className="font-semibold text-gray-800 dark:text-gray-200">Party C</span>
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{tally.partyC} votes ({getPercentage(tally.partyC)}%)</span>
-          </div>
-          <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-4 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-amber-400 to-orange-500 h-4 rounded-full transition-all duration-1000 ease-out"
-              style={{ width: getWidth(tally.partyC) }}
-              role="progressbar"
-              aria-valuenow={getPercentage(tally.partyC)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            ></div>
-          </div>
+        <div className="text-right">
+           <div className="text-3xl font-black text-blue-600">{tally.total}</div>
+           <div className="text-xs uppercase text-gray-500">Total Ballots</div>
         </div>
       </div>
-      
-      <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-center">
-        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-          <span className="relative flex h-2 w-2 mr-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-          </span>
-          Live connection via Firestore
-        </div>
+
+      {/* Node 2: OffscreenCanvas Container */}
+      <div className="relative w-full h-[200px] bg-gray-50 dark:bg-gray-950 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
+        <canvas 
+          ref={canvasRef} 
+          width={600} 
+          height={200} 
+          className="w-full h-full"
+        />
+      </div>
+
+      <div className="mt-8 text-xs text-gray-500 italic flex items-center">
+        <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        Rendering offloaded to OffscreenCanvas Web Worker.
       </div>
     </div>
   );

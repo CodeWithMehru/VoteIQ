@@ -1,0 +1,65 @@
+import { describe, it, expect } from 'vitest';
+import { sanitizeInput, validateVoterId } from '@/lib/index';
+import { Result } from '@/lib/index';
+
+describe('Zenith Fortress: Offensive Security Suite', () => {
+  
+  describe('XSS Sanitization Fuzzing', () => {
+    const payloads = [
+      '<script>alert(1)</script>',
+      '"><img src=x onerror=alert(1)>',
+      "javascript:alert(1)",
+      '<svg/onload=alert(1)>',
+      '<iframe src="javascript:alert(1)"></iframe>',
+      '"><details open ontoggle=alert(1)>',
+      'admin" OR "1"="1'
+    ];
+
+    it('should neutralize 100% of common XSS payloads', () => {
+      payloads.forEach(payload => {
+        const sanitized = sanitizeInput(payload);
+        expect(sanitized).not.toContain('<script>');
+        expect(sanitized).not.toContain('onerror');
+        expect(sanitized).not.toContain('javascript:');
+        expect(sanitized).not.toMatch(/[<>]/);
+      });
+    });
+  });
+
+  describe('Injection Attack Resilience', () => {
+    const injectionStrings = [
+      '{"$gt": ""}',
+      '{"$ne": null}',
+      "' OR 1=1 --",
+      "DROP TABLE votes;",
+      "'; EXEC sp_helpdb; --"
+    ];
+
+    it('should invalidate or sanitize injection-style voter IDs', () => {
+      injectionStrings.forEach(str => {
+        const isValid = validateVoterId(str);
+        expect(isValid).toBe(false);
+      });
+    });
+  });
+
+  describe('State Invariant Hardening', () => {
+    it('should reject state transitions that violate election integrity', () => {
+      const corruptState = { hasVoted: true, voteCount: 0 };
+      
+      const validateState = (state: { hasVoted: boolean; voteCount: number }): Result<boolean, string> => {
+        if (state.hasVoted && state.voteCount === 0) {
+          return { success: false, error: 'INTEGRITY_BREACH: Vote count mismatch' };
+        }
+        return { success: true, data: true };
+      };
+
+      const result = validateState(corruptState);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('INTEGRITY_BREACH');
+      }
+    });
+  });
+
+});

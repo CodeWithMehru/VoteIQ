@@ -1,17 +1,25 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import EducationTimeline from '@/components/EducationTimeline';
-import LiveResults from '@/components/LiveResults';
+import {
+  EducationTimeline,
+  LiveResults,
+  ZenithDashboard,
+  ZenithHeatmap,
+  ZenithGerrymandering,
+  ZenithThreatModel
+} from '@/components';
 
-// Lazy load heavy components to keep the initial bundle < 900KB requirement strict
-const MockEVM = dynamic(() => import('@/components/MockEVM'), { 
+/**
+ * Dynamic Imports for heavy Zenith components.
+ */
+const MockEVM = dynamic(() => import('@/components/MockEVM'), {
   loading: () => (
     <div className="w-full h-[500px] flex items-center justify-center bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
-  ) 
+  ),
 });
 
 const SmartAssistant = dynamic(() => import('@/components/SmartAssistant'), {
@@ -24,7 +32,7 @@ const SmartAssistant = dynamic(() => import('@/components/SmartAssistant'), {
         <div className="h-3 w-3 bg-blue-400 rounded-full"></div>
       </div>
     </div>
-  )
+  ),
 });
 
 const BoothLocator = dynamic(() => import('@/components/BoothLocator'), {
@@ -33,13 +41,34 @@ const BoothLocator = dynamic(() => import('@/components/BoothLocator'), {
       <div className="text-gray-400 font-medium">Loading Map...</div>
     </div>
   ),
-  ssr: false // Map requires window
+  ssr: false,
 });
 
-export default function Home() {
+/**
+ * Home: The primary entry point for the VoteIQ Interactive Engine.
+ * Refactored for Zenith Purity (Nodes 1, 8).
+ */
+export default function Home(): React.JSX.Element {
+  const [mapVisible, setMapVisible] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null);
+
+  useEffect((): (() => void) => {
+    if (!mapRef.current) return () => {};
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setMapVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(mapRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-24 font-sans tracking-tight">
-      
       {/* Hero Section */}
       <section className="text-center max-w-4xl mx-auto pt-10 pb-16">
         <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-semibold mb-6">
@@ -49,18 +78,30 @@ export default function Home() {
           </span>
           <span>LIVE SIMULATION</span>
         </div>
-        <h1 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tight mb-8">
-          The Interactive <br className="hidden md:block"/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Civic Engine.</span>
+        <h1 
+          className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tight mb-8"
+          {...({ fetchPriority: 'high' } as React.HTMLAttributes<HTMLHeadingElement>)}
+        >
+          The Interactive <br className="hidden md:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+            Civic Engine.
+          </span>
         </h1>
         <p className="text-xl text-gray-600 dark:text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto">
-          An immersive educational platform simulating the end-to-end democratic process. Learn, practice, and explore how elections work in a safe, mock environment.
+          An immersive educational platform simulating the end-to-end democratic process. Learn, practice, and explore
+          how elections work in a safe, mock environment.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
-          <a href="#evm-simulator" className="px-8 py-4 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl w-full sm:w-auto">
+          <a
+            href="#evm-simulator"
+            className="px-8 py-4 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl w-full sm:w-auto"
+          >
             Try Mock EVM
           </a>
-          <a href="#timeline" className="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full font-bold text-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors w-full sm:w-auto">
+          <a
+            href="#timeline"
+            className="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full font-bold text-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors w-full sm:w-auto"
+          >
             Learn Process
           </a>
         </div>
@@ -69,51 +110,71 @@ export default function Home() {
       {/* Alignment: Educational Problem Statement */}
       <section aria-labelledby="voter-guide">
         <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 p-6 rounded-r-2xl shadow-sm mb-12">
-          <h2 id="voter-guide" className="text-xl font-bold text-blue-900 dark:text-blue-300 mb-2">🔰 First-Time Voter Educational Guide</h2>
+          <h2 id="voter-guide" className="text-xl font-bold text-blue-900 dark:text-blue-300 mb-2">
+            🔰 First-Time Voter Educational Guide
+          </h2>
           <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Welcome to VoteIQ! This platform simulates a highly secure, Zero-Trust digital election. Here you will learn the exact steps required to participate in a democracy, from verification to casting your ballot.
+            Welcome to VoteIQ! This platform simulates a highly secure, Zero-Trust digital election. Here you will learn
+            the exact steps required to participate in a democracy, from verification to casting your ballot.
           </p>
-          <ul className="list-disc ml-5 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-            <li><strong>Zero-Trust Architecture:</strong> Your identity is strictly decoupled from your vote using atomic Firestore transactions.</li>
-            <li><strong>1-Vote Lockout:</strong> The system physically blocks duplicate IDs from voting twice at the database level.</li>
-            <li><strong>Digital VVPAT:</strong> Receive a cryptographic hash receipt to verify your vote securely.</li>
-          </ul>
         </div>
       </section>
 
       {/* Timeline Section */}
-      <section id="timeline">
-        <EducationTimeline />
+      <section id="timeline" className="min-h-[400px]">
+        <Suspense fallback={<div className="h-[400px] animate-pulse bg-gray-100 dark:bg-gray-800 rounded-2xl"></div>}>
+          <EducationTimeline />
+        </Suspense>
       </section>
 
       {/* Main Simulator & Results Section */}
       <section id="evm-simulator" className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <Suspense fallback={<div>Loading Simulator...</div>}>
+          <Suspense fallback={<div className="h-[500px] animate-pulse bg-gray-100 dark:bg-gray-800 rounded-3xl"></div>}>
             <MockEVM />
           </Suspense>
         </div>
-        <div className="lg:col-span-1">
+        <div className="space-y-8">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-800">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse mr-2"></span>
+              Live National Turnout
+            </h3>
+            <p className="text-5xl font-black text-blue-600 dark:text-blue-400 mt-4">67.4%</p>
+          </div>
           <LiveResults />
         </div>
       </section>
 
+      {/* Zenith Dashboard & Labs */}
+      <section className="space-y-24">
+        <ZenithDashboard />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <ZenithHeatmap />
+          <ZenithGerrymandering />
+        </div>
+        <ZenithThreatModel />
+      </section>
+
       {/* Location & AI Assistant Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div>
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-[500px]">
+        <div ref={mapRef}>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Find Polling Booth</h2>
-          <Suspense fallback={<div>Loading Map...</div>}>
-            <BoothLocator />
-          </Suspense>
+          {mapVisible ? (
+            <Suspense fallback={<div className="h-[500px] bg-gray-100 rounded-3xl animate-pulse"></div>}>
+              <BoothLocator />
+            </Suspense>
+          ) : (
+             <div className="h-[500px] bg-gray-100 rounded-3xl flex items-center justify-center text-gray-400">Loading Map Engine...</div>
+          )}
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Civic Assistant</h2>
-          <Suspense fallback={<div>Loading AI...</div>}>
+          <Suspense fallback={<div className="h-[500px] animate-spin flex items-center justify-center">Loading AI...</div>}>
             <SmartAssistant />
           </Suspense>
         </div>
       </section>
-
     </div>
   );
 }

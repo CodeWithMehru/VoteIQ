@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import LanguageSwitcher from './LanguageSwitcher';
 
-export default function Navbar() {
+export default function Navbar(): React.JSX.Element {
   const { user, loginWithGoogle, logout } = useAuth();
 
   return (
@@ -21,28 +21,28 @@ export default function Navbar() {
               </span>
             </Link>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <LanguageSwitcher />
-            
+
             {user?.role === 'staff' && (
-              <Link 
+              <Link
                 href="/dashboard"
                 className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 Dashboard
               </Link>
             )}
-            
+
             {user ? (
-              <button 
+              <button
                 onClick={logout}
                 className="text-sm font-medium px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-white"
               >
                 Sign Out
               </button>
             ) : (
-              <button 
+              <button
                 onClick={loginWithGoogle}
                 className="text-sm font-medium px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
               >

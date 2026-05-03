@@ -1,8 +1,8 @@
 import { v2 } from '@google-cloud/translate';
 
 // Use the v2 API client
-const translateClient = process.env.GOOGLE_CLOUD_PROJECT 
-  ? new v2.Translate({ projectId: process.env.GOOGLE_CLOUD_PROJECT }) 
+const translateClient = process.env.GOOGLE_CLOUD_PROJECT
+  ? new v2.Translate({ projectId: process.env.GOOGLE_CLOUD_PROJECT })
   : null;
 
 /**

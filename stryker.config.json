@@ -1,0 +1,19 @@
+{
+  "$schema": "https://stryker-mutator.io/schema/stryker-config.json",
+  "packageManager": "npm",
+  "reporters": ["html", "clear-text", "progress"],
+  "testRunner": "vitest",
+  "testRunner_static": {
+    "configFile": "vitest.config.ts"
+  },
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "src/lib/logic.ts",
+    "src/hooks/useVotes.ts"
+  ],
+  "thresholds": {
+    "high": 95,
+    "low": 80,
+    "break": 90
+  }
+}

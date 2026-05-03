@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, onSnapshot, doc, getDoc, query, orderBy } from 'firebase/firestore';
+import { getFirestore, collection, onSnapshot, doc, getDoc, query, orderBy, limit } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,11 +12,24 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase only if config is valid (avoids build errors if missing)
-const app = getApps().length > 0 ? getApp() : (
-  firebaseConfig.apiKey ? initializeApp(firebaseConfig) : null
-);
+const app = getApps().length > 0 ? getApp() : firebaseConfig.apiKey ? initializeApp(firebaseConfig) : null;
 
 const auth = app ? getAuth(app) : null;
 const db = app ? getFirestore(app) : null;
 
-export { app, auth, db, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut, collection, onSnapshot, doc, getDoc, query, orderBy };
+export {
+  app,
+  auth,
+  db,
+  signInAnonymously,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  collection,
+  onSnapshot,
+  doc,
+  getDoc,
+  query,
+  orderBy,
+  limit,
+};

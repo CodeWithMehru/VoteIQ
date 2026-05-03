@@ -1,8 +1,7 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
   --color-primary-500: #3b82f6;
@@ -27,10 +26,80 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+    transition: letter-spacing 0.2s, line-height 0.2s;
+  }
+
+  /* Vanguard Node 2: WCAG 2.2 Target Size Enforcement (44px min) */
+  button, a, input, select, textarea {
+    min-width: 44px;
+    min-height: 44px;
+    outline-offset: 4px;
+  }
+
+  /* Vanguard Node 10: Global prefers-reduced-motion Kill Switch */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Vanguard Node 7: Forced Colors Mode (High Contrast Support) */
+  @media (forced-colors: active) {
+    button, a, input {
+      border: 2px solid ButtonText !important;
+      outline: 2px solid transparent !important;
+    }
+    svg {
+      fill: CanvasText !important;
+    }
+  }
+
+  /* Vanguard Node 4: Dyslexia / Cognitive Reading Mode Classes */
+  .cognitive-mode {
+    letter-spacing: 0.12em !important;
+    word-spacing: 0.2em !important;
+    line-height: 1.8 !important;
+    font-family: 'OpenDyslexic', var(--font-sans) !important;
   }
 }
 
-/* Custom Scrollbar for a cleaner look */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip Links (Node 3) */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: #2563eb;
+  color: white;
+  padding: 1rem;
+  z-index: 1000;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* Singularity Node 4: CSS Strict Containment */
+#evm-simulator {
+  contain: strict;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -46,13 +115,4 @@
   ::-webkit-scrollbar-thumb {
     background: #334155;
   }
-}
-
-/* Hide scrollbar for components that scroll horizontally */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
