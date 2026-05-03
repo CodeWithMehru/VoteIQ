@@ -7,59 +7,58 @@ import { useRouter } from 'next/navigation';
  * useZenithShortcuts (Accessibility Node 16)
  * Global keyboard command engine for high-efficiency navigation.
  */
-export function useZenithShortcuts(): void {
+export function useZenithShortcuts() {
   const router = useRouter();
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (!e.altKey) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Alt + S: Go to Simulator
+      if (e.altKey && e.key === 's') {
+        const el = document.getElementById('evm-simulator');
+        el?.scrollIntoView({ behavior: 'smooth' });
+        el?.focus();
+      }
       
-      const keyMap: Record<string, () => void> = {
-        's': () => {
-          const el = document.getElementById('evm-simulator');
-          el?.scrollIntoView({ behavior: 'smooth' });
-          el?.focus();
-        },
-        'a': () => {
-          const el = document.querySelector('textarea');
-          el?.scrollIntoView({ behavior: 'smooth' });
-          el?.focus();
-        },
-        't': () => {
-          const el = document.getElementById('timeline');
-          el?.scrollIntoView({ behavior: 'smooth' });
-        }
-      };
-      
-      keyMap[e.key]?.();
+      // Alt + A: Go to AI Assistant
+      if (e.altKey && e.key === 'a') {
+        const el = document.querySelector('textarea');
+        el?.scrollIntoView({ behavior: 'smooth' });
+        el?.focus();
+      }
+
+      // Alt + T: Go to Timeline
+      if (e.altKey && e.key === 't') {
+        const el = document.getElementById('timeline');
+        el?.scrollIntoView({ behavior: 'smooth' });
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return (): void => window.removeEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [router]);
 }
 
-import React, { Component, ErrorInfo,   } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 /**
  * ZenithErrorBoundary (Code Quality Node 14)
  * Advanced isolation for Zenith architectural nodes.
  */
-export class ZenithErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: React.ReactNode }) {
+export class ZenithErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(_: Error): { hasError: boolean } {
+  static getDerivedStateFromError(_: Error) {
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[Zenith Code Quality] Error Boundary Caught:', error, errorInfo);
   }
 
-  render(): React.ReactNode {
+  render() {
     if (this.state.hasError) {
       return (
         <div className="p-8 bg-red-50 dark:bg-red-900/20 rounded-3xl border border-red-200 dark:border-red-800 text-center">

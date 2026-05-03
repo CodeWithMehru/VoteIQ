@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, memo,   } from 'react';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { useState, useCallback, useEffect, memo } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 
+/**
+ * Domain-specific booth structure.
+ */
 interface Booth {
   readonly id: string;
   readonly name: string;
@@ -11,20 +14,29 @@ interface Booth {
   readonly address: string;
 }
 
-const MOCK_BOOTHS: readonly Booth[] = [
+/**
+ * Static Mock Data (Purity: Constant outside component).
+ */
+const MOCK_BOOTHS: ReadonlyArray<Booth> = [
   { id: '1', name: 'Booth A (North District)', lat: 40.7128, lng: -74.006, address: '123 Civic Center Dr' },
   { id: '2', name: 'Booth B (South District)', lat: 40.7282, lng: -73.9942, address: '456 Democracy Way' },
   { id: '3', name: 'Booth C (East District)', lat: 40.7048, lng: -74.0137, address: '789 Liberty Ave' },
-] as const satisfies readonly Booth[];
+];
 
 const MAP_CONTAINER_STYLE: React.CSSProperties = {
   width: '100%',
   height: '100%',
   borderRadius: '0.75rem',
-} as const satisfies React.CSSProperties;
+};
 
+/**
+ * Memoized Google Map component.
+ */
 const MemoizedGoogleMap = memo(GoogleMap);
 
+/**
+ * Individual Booth row component.
+ */
 const BoothRow = memo(({ 
   booth, 
   isActive, 
@@ -33,7 +45,7 @@ const BoothRow = memo(({
   readonly booth: Booth, 
   readonly isActive: boolean, 
   readonly onClick: () => void 
-}): React.ReactNode => (
+}): JSX.Element => (
   <div
     onClick={onClick}
     className={`p-4 m-2 rounded-xl cursor-pointer transition-all ${
@@ -53,18 +65,28 @@ const BoothRow = memo(({
       {booth.address}
     </p>
   </div>
-), (prev: { readonly isActive: boolean; readonly booth: { readonly id: string } }, next: { readonly isActive: boolean; readonly booth: { readonly id: string } }): boolean => 
-  prev.isActive === next.isActive && prev.booth.id === next.booth.id);
-
+), (prev, next) => prev.isActive === next.isActive && prev.booth.id === next.booth.id);
 BoothRow.displayName = 'BoothRow';
 
 /**
- * Singularity Architecture: Booth Locator with Strict Types
+ * Memoized Marker component with custom comparator.
  */
-export default function BoothLocator(): React.ReactNode {
-  const [activeBooth, setActiveBooth] = useState<Booth>(MOCK_BOOTHS[0]!);
-  const [mapError, setMapError] = useState<boolean>(false);
-  const [fallbackMode, setFallbackMode] = useState<boolean>(false);
+const MemoizedMarker = memo(Marker, (prev, next) => 
+  prev.position.lat === next.position.lat && 
+  prev.position.lng === next.position.lng &&
+  prev.animation === next.animation
+);
+MemoizedMarker.displayName = 'MemoizedMarker';
+
+/**
+ * BoothLocator: Interactive map for finding polling stations.
+ * Refactored for Zenith Purity (Nodes 1, 2, 6, 9).
+ */
+export default function BoothLocator(): JSX.Element {
+  const [activeBooth, setActiveBooth] = useState<Booth>(MOCK_BOOTHS[0]);
+  const [mapError, setMapError] = useState(false);
+  const [fallbackMode, setFallbackMode] = useState(false);
+  const [filterAccessible, setFilterAccessible] = useState(false);
 
   useEffect((): void => {
     if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
@@ -77,14 +99,11 @@ export default function BoothLocator(): React.ReactNode {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [, setMap] = useState<any>(null);
+  const [, setMap] = useState<google.maps.Map | null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onLoad = useCallback((map: any): void => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const bounds = new (window as any).google.maps.LatLngBounds();
-    MOCK_BOOTHS.forEach((booth: Booth): void => bounds.extend({ lat: booth.lat, lng: booth.lng }));
+  const onLoad = useCallback((map: google.maps.Map): void => {
+    const bounds = new window.google.maps.LatLngBounds();
+    MOCK_BOOTHS.forEach((booth) => bounds.extend({ lat: booth.lat, lng: booth.lng }));
     map.fitBounds(bounds);
     setMap(map);
   }, []);
@@ -93,9 +112,9 @@ export default function BoothLocator(): React.ReactNode {
     setMap(null);
   }, []);
 
-  useEffect((): void => {
-    if (loadError) setMapError(true);
-  }, [loadError]);
+  if (loadError) {
+    setMapError(true);
+  }
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-xl border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row h-[500px]">
@@ -105,12 +124,12 @@ export default function BoothLocator(): React.ReactNode {
           <p className="text-sm text-gray-500 mt-1">Find your mock polling station</p>
         </div>
         <div className="overflow-y-auto flex-1 p-2">
-          {MOCK_BOOTHS.map((booth: Booth): React.ReactNode => (
+          {MOCK_BOOTHS.map((booth) => (
             <BoothRow 
               key={booth.id} 
               booth={booth} 
               isActive={activeBooth.id === booth.id} 
-              onClick={(): void => setActiveBooth(booth)} 
+              onClick={() => setActiveBooth(booth)} 
             />
           ))}
         </div>
@@ -123,7 +142,7 @@ export default function BoothLocator(): React.ReactNode {
              <strong className="text-gray-600 dark:text-gray-300 mt-2 block">{activeBooth.name}</strong>
           </div>
         ) : isLoaded ? (
-          <div className="h-full w-full">
+          <div aria-describedby="map-instructions" className="h-full w-full">
             <MemoizedGoogleMap
               mapContainerStyle={MAP_CONTAINER_STYLE}
               center={{ lat: activeBooth.lat, lng: activeBooth.lng }}
@@ -132,13 +151,12 @@ export default function BoothLocator(): React.ReactNode {
               onUnmount={onUnmount}
               options={{ disableDefaultUI: true, zoomControl: true }}
             >
-              {MOCK_BOOTHS.map((booth: Booth): React.ReactNode => (
-                <Marker
+              {MOCK_BOOTHS.map((booth) => (
+                <MemoizedMarker
                   key={booth.id}
                   position={{ lat: booth.lat, lng: booth.lng }}
-                  onClick={(): void => setActiveBooth(booth)}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  animation={activeBooth.id === booth.id ? ((window as any).google.maps.Animation.BOUNCE as number) : undefined}
+                  onClick={() => setActiveBooth(booth)}
+                  animation={activeBooth.id === booth.id ? (window.google.maps.Animation.BOUNCE as any) : undefined}
                 />
               ))}
             </MemoizedGoogleMap>

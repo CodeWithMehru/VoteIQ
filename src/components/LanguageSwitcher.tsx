@@ -1,7 +1,6 @@
 'use client';
 
 import { useLanguage } from '@/lib/i18n';
-import React, {   } from 'react';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -9,15 +8,12 @@ const LANGUAGES = [
   { code: 'fr', label: 'Français' },
   { code: 'hi', label: 'हिन्दी' },
   { code: 'zh', label: '中文' },
-] as const;
+];
 
-/**
- * Singularity Architecture: Language Switcher with Strict Types
- */
-export default function LanguageSwitcher(): React.ReactNode {
-  const { language, setLanguage } = useLanguage();
+export default function LanguageSwitcher() {
+  const { language, setLanguage, isTranslating } = useLanguage();
 
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setLanguage(e.target.value);
   };
 
@@ -40,6 +36,7 @@ export default function LanguageSwitcher(): React.ReactNode {
       <select
         value={language}
         onChange={handleLanguageChange}
+        disabled={isTranslating}
         className="bg-transparent text-sm border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-800 dark:text-white disabled:opacity-50"
         aria-label="Select Language"
       >

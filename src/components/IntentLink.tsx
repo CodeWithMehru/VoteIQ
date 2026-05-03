@@ -13,7 +13,7 @@ interface IntentLinkProps {
   className?: string;
 }
 
-export function IntentLink({ href, children, className }: IntentLinkProps): React.JSX.Element {
+export function IntentLink({ href, children, className }: IntentLinkProps) {
   const router = useRouter();
   const prefetchTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -21,7 +21,7 @@ export function IntentLink({ href, children, className }: IntentLinkProps): Reac
     // 100ms threshold for "Intent"
     prefetchTimeout.current = setTimeout(() => {
       router.prefetch(href);
-      console.warn(`[Zenith Efficiency] Intent detected: Preloading ${href}`);
+      console.log(`[Zenith Efficiency] Intent detected: Preloading ${href}`);
     }, 100);
   }, [href, router]);
 

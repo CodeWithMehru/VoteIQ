@@ -1,23 +1,11 @@
-/**
- * Singularity Node 9: Service Worker Navigation Preload
- */
+const CACHE_NAME = 'voteiq-v1';
+const ASSETS_TO_CACHE = ['/', '/manifest.json', '/favicon.ico'];
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(async function() {
-    if (self.registration.navigationPreload) {
-      await self.registration.navigationPreload.enable();
-    }
-  }());
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith(async function() {
-      const preloadResponse = await event.preloadResponse;
-      if (preloadResponse) {
-        return preloadResponse;
-      }
-      return fetch(event.request);
-    }());
-  }
+  if (event.request.url.includes('/api/')) return;
+  event.respondWith(caches.match(event.request).then((response) => response || fetch(event.request)));
 });

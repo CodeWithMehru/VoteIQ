@@ -1,102 +1,134 @@
 import { NextResponse } from 'next/server';
+import { adminDb } from '@/lib/infrastructure/firebase_admin_service';
+import { publishVoteCastEvent } from '@/lib/infrastructure/pubsub';
+import { logVoteAnalytics } from '@/lib/infrastructure/bigquery';
 import { headers } from 'next/headers';
-import { Result, VotePayloadSchema, IVotingService, ValidationException } from '@/lib';
-import { serverContainer, SERVICE_KEYS } from '@/lib/ioc.server';
-import { timingSafeEqual } from '@/lib/domain/logic';
+import { z } from 'zod';
+import { Result, CandidateID, VisitorID, VoterID } from '@/lib/domain/types';
 
-const usedNonces: Set<string> = new Set<string>();
-let consecutiveFailures: number = 0;
-const FAILURE_THRESHOLD: number = 3;
+/**
+ * Strict Input Schema for the Voting API.
+ */
+const VoteSchema = z.object({
+  candidateId: z.string().min(1),
+  visitorId: z.string().min(1),
+  voterId: z.string().min(5).max(20),
+  name: z.string().min(1),
+  csrfToken: z.string().optional(),
+});
 
-interface RawBody {
-  readonly nonce?: string;
-  readonly csrfToken?: string;
-  readonly honeypot?: boolean;
-}
+/**
+ * Domain-specific type for the voting response.
+ */
+type VoteResultData = {
+  readonly receipt: string;
+  readonly verificationHash: string;
+};
 
-async function runAegisSecurityChecks(rawBody: RawBody): Promise<NextResponse | null> {
-  // Aegis: Replay Attack Prevention
-  const nonce: string = rawBody.nonce || '';
-  if (!nonce || usedNonces.has(nonce)) {
-    return createErrorResponse('REPLAY_ATTACK_DETECTED', 403);
+/**
+ * Voting API Route Handler (Purity Node 1, 5, 10)
+ * @param request The incoming Request object.
+ * @returns A Promise resolving to a NextResponse.
+ */
+export async function POST(request: Request): Promise<NextResponse> {
+  try {
+    const body = await request.json();
+    
+    // Node 10: Zod Data Mapping & Validation
+    const parseResult = VoteSchema.safeParse(body);
+    if (!parseResult.success) {
+      return createErrorResponse('INVALID_PAYLOAD', 400, parseResult.error);
+    }
+
+    const { candidateId, visitorId, voterId, name, csrfToken } = parseResult.data;
+
+    // Node 13: Security Protocol Verification
+    const headersList = await headers();
+    const providedCsrfToken = headersList.get('x-csrf-token') || csrfToken;
+    if (!providedCsrfToken || providedCsrfToken !== 'mock-csrf-token-12345') {
+      return createErrorResponse('FORBIDDEN_CSRF', 403);
+    }
+
+    const timestamp = Date.now();
+
+    // Estonian Double Envelope Simulation (Logic extraction candidate)
+    const innerEnvelopeEncrypted = Buffer.from(`vote:${candidateId}:${timestamp}`).toString('base64');
+    const verificationHash = Buffer.from(`verify:${visitorId}:${innerEnvelopeEncrypted}`)
+      .toString('hex')
+      .substring(0, 16)
+      .toUpperCase();
+
+    if (!adminDb) {
+      await Promise.all([
+        publishVoteCastEvent(visitorId as VisitorID, candidateId as CandidateID),
+        logVoteAnalytics(visitorId as VisitorID)
+      ]);
+
+      return createSuccessResponse({
+        receipt: `MOCK-${verificationHash}`,
+        verificationHash,
+      });
+    }
+
+    const castVoteRef = adminDb.collection('cast_votes').doc(voterId);
+    const tallyRef = adminDb.collection('vote_tallies').doc(candidateId);
+
+    await adminDb.runTransaction(async (transaction) => {
+      const castVoteDoc = await transaction.get(castVoteRef);
+      if (castVoteDoc.exists) {
+        throw new Error('ALREADY_VOTED');
+      }
+
+      const tallyDoc = await transaction.get(tallyRef);
+      transaction.set(castVoteRef, {
+        voterId,
+        name,
+        candidateId,
+        timestamp,
+        verificationHash,
+      });
+
+      const newCount = tallyDoc.exists ? (tallyDoc.data()?.count || 0) + 1 : 1;
+      transaction.set(tallyRef, { count: newCount }, { merge: true });
+    });
+
+    await Promise.all([
+      publishVoteCastEvent(visitorId as VisitorID, candidateId as CandidateID),
+      logVoteAnalytics(visitorId as VisitorID)
+    ]);
+
+    return createSuccessResponse({
+      receipt: `TXN-${verificationHash}`,
+      verificationHash,
+    });
+
+  } catch (error: unknown) {
+    console.error('[Zenith Security] API Breach/Error:', error);
+    const err = error as { message?: string; code?: string };
+
+    if (err?.message === 'ALREADY_VOTED') {
+      return createErrorResponse('ALREADY_VOTED', 403, 'Duplicate ballot detected.');
+    }
+
+    return createErrorResponse('INTERNAL_SERVER_ERROR', 500, err.message);
   }
-  usedNonces.add(nonce);
-  setTimeout((): boolean => usedNonces.delete(nonce), 60000);
-
-  // Aegis: CSRF Protection
-  const headersList = await headers();
-  const providedCsrfToken: string | null = headersList.get('x-csrf-token') || rawBody.csrfToken || null;
-  
-  if (!providedCsrfToken || !timingSafeEqual(providedCsrfToken, 'mock-csrf-token-12345')) {
-    return createErrorResponse('FORBIDDEN_CSRF', 403);
-  }
-  return null;
 }
 
 /**
- * Singularity Architecture: Defensive API Route with Hard IoC Boundary
+ * Standardized Success Factory
  */
-export async function POST(request: Request): Promise<NextResponse> {
-  if (consecutiveFailures >= FAILURE_THRESHOLD) {
-    return createErrorResponse('SYSTEM_LOCKDOWN', 503, 'Aegis Security: Backend in fail-closed state.');
-  }
-
-  try {
-    const contentType: string | null = request.headers.get('content-type');
-    if (contentType !== 'application/json') {
-      return createErrorResponse('UNSUPPORTED_MEDIA_TYPE', 415);
-    }
-
-    const body: unknown = await request.json();
-    const rawBody = body as RawBody;
-
-    // Honeypot check
-    if (rawBody.honeypot) {
-       return createSuccessResponse({ receipt: 'MOCK-OK', verificationHash: 'OK' });
-    }
-
-    const parseResult = VotePayloadSchema.safeParse(body);
-    if (!parseResult.success) {
-      throw new ValidationException('Invalid vote payload', parseResult.error.format());
-    }
-
-    const payload = parseResult.data;
-
-    const securityFailure = await runAegisSecurityChecks(rawBody);
-    if (securityFailure) return securityFailure;
-
-    // Node 2: Server-Side IoC Container Resolution
-    const votingService: IVotingService = serverContainer.resolve<IVotingService>(SERVICE_KEYS.VOTING);
-    
-    // Node 3: WASM Hashing integrated via VotingService
-    const result = await votingService.castVote(payload);
-
-    if (!result.success) {
-      return createErrorResponse('VOTE_FAILED', 400, result.error);
-    }
-
-    consecutiveFailures = 0;
-    return createSuccessResponse(result.data);
-
-  } catch (error: unknown) {
-    console.error('Vote API Error details:', error);
-    consecutiveFailures++;
-    if (error instanceof ValidationException) {
-      return createErrorResponse(error.code, error.statusCode, error.details);
-    }
-    return createErrorResponse('INTERNAL_SECURITY_ERROR', 500);
-  }
+function createSuccessResponse(data: VoteResultData): NextResponse {
+  const result: Result<VoteResultData> = { success: true, data };
+  return NextResponse.json(result);
 }
 
-function createSuccessResponse(data: unknown): NextResponse {
-  const res: Result<unknown> = { success: true, data };
-  return NextResponse.json(res);
-}
-
-function createErrorResponse(error: string, status: number, details?: unknown): NextResponse {
-  const res: Result<never, { code: string; details?: unknown }> = { 
+/**
+ * Standardized Error Factory
+ */
+function createErrorResponse(error: string, status: number, details?: any): NextResponse {
+  const result: Result<never, { code: string; details?: any }> = { 
     success: false, 
     error: { code: error, details } 
   };
-  return NextResponse.json(res, { status });
+  return NextResponse.json(result, { status });
 }

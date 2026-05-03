@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
  * useA11y (Accessibility Nodes 4, 5)
  * Zenith Accessibility Engine for focus management and announcement queuing.
  */
-export function useA11y(): { announce: (message: string) => void; announcement: string | null; useFocusTrap: (isActive: boolean) => React.RefObject<HTMLDivElement | null> } {
+export function useA11y() {
   const [announcement, setAnnouncement] = useState<string | null>(null);
   const queueRef = useRef<string[]>([]);
   const isAnnouncingRef = useRef(false);
@@ -34,13 +34,13 @@ export function useA11y(): { announce: (message: string) => void; announcement: 
   }, []);
 
   // Accessibility Node 5: Focus Trap Hook (Simplified for React)
-  const useFocusTrap = (isActive: boolean): React.RefObject<HTMLDivElement | null> => {
+  const useFocusTrap = (isActive: boolean) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
       if (!isActive) return;
 
-      const handleTab = (e: KeyboardEvent): void => {
+      const handleTab = (e: KeyboardEvent) => {
         if (!containerRef.current || e.key !== 'Tab') return;
 
         const focusable = containerRef.current.querySelectorAll(
@@ -63,7 +63,7 @@ export function useA11y(): { announce: (message: string) => void; announcement: 
       };
 
       window.addEventListener('keydown', handleTab);
-      return (): void => window.removeEventListener('keydown', handleTab);
+      return () => window.removeEventListener('keydown', handleTab);
     }, [isActive]);
 
     return containerRef;

@@ -98,7 +98,7 @@ const STEPS = [
   },
 ];
 
-export default function EducationTimeline(): React.JSX.Element {
+export default function EducationTimeline() {
   const [activeStep, setActiveStep] = useState(0);
 
   return (

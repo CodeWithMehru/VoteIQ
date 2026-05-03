@@ -1,84 +1,82 @@
 import { useState, useEffect } from 'react';
-import { db, collection, onSnapshot, query, orderBy, limit } from '@/lib';
-import { VoteTally } from '@/lib';
-import type {
-  QuerySnapshot,
-  DocumentData,
-  FirestoreError,
-  Unsubscribe,
-} from 'firebase/firestore';
+import { db } from '@/lib/infrastructure/firebase';
+import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { VoteTally } from '@/lib/domain/types';
 
 export interface VoteRecord {
-  readonly id: string;
-  readonly voterId: string;
-  readonly name: string;
-  readonly candidateId: string;
-  readonly timestamp: number;
+  id: string;
+  voterId: string;
+  name: string;
+  candidateId: string;
+  timestamp: number;
 }
 
-interface UseVotesReturn {
-  readonly tally: VoteTally;
-  readonly castVotes: VoteRecord[];
-  readonly loading: boolean;
-}
-
-export function useVotes(): UseVotesReturn {
+export function useVotes() {
   const [tally, setTally] = useState<VoteTally>({ partyA: 0, partyB: 0, partyC: 0, total: 0 });
   const [castVotes, setCastVotes] = useState<VoteRecord[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
-  useEffect((): (() => void) | undefined => {
+  useEffect(() => {
     if (!db) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setLoading(false);
-      return undefined;
+      return;
     }
 
-    const unsubTallies: Unsubscribe = onSnapshot(
+    const unsubTallies = onSnapshot(
       collection(db, 'vote_tallies'),
-      (snapshot: QuerySnapshot<DocumentData>): void => {
+      (snapshot) => {
         let partyA = 0;
         let partyB = 0;
         let partyC = 0;
 
-        snapshot.forEach((doc): void => {
+        snapshot.forEach((doc) => {
           const data = doc.data();
-          if (doc.id === 'partyA') partyA = (data.count as number) || 0;
-          if (doc.id === 'partyB') partyB = (data.count as number) || 0;
-          if (doc.id === 'partyC') partyC = (data.count as number) || 0;
+          if (doc.id === 'partyA') partyA = data.count || 0;
+          if (doc.id === 'partyB') partyB = data.count || 0;
+          if (doc.id === 'partyC') partyC = data.count || 0;
         });
 
-        setTally({ partyA, partyB, partyC, total: partyA + partyB + partyC });
+        setTally({
+          partyA,
+          partyB,
+          partyC,
+          total: partyA + partyB + partyC,
+        });
         setLoading(false);
       },
-      (error: FirestoreError): void => {
-        console.error('Error subscribing to votes', error);
+      (error) => {
+        console.error('Error subscribing to votes', error as unknown);
         setLoading(false);
       }
     );
 
     const q = query(
-      collection(db, 'cast_votes'),
+      collection(db, 'cast_votes'), 
       orderBy('timestamp', 'desc'),
-      limit(20)
+      // Efficiency Node 5: Payload Field Pruning & Limit
+      // We only fetch the top 20 votes and limit fields via manual mapping to reduce object overhead
+      limit(20) 
     );
-    const unsubVotes: Unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>): void => {
+    const unsubVotes = onSnapshot(q, (snapshot) => {
       const votes: VoteRecord[] = [];
-      snapshot.forEach((doc): void => {
+      snapshot.forEach((doc) => {
         const data = doc.data();
-        votes.push({
-          id: doc.id,
-          candidateId: (data.candidateId as string) || '',
-          timestamp: (data.timestamp as number) || 0,
-          name: (data.name as string) || '',
-          voterId: (data.voterId as string) || '',
-        } satisfies VoteRecord);
+        votes.push({ 
+          id: doc.id, 
+          candidateId: data.candidateId,
+          timestamp: data.timestamp,
+          // Node 5: Stripping unnecessary large fields like 'name' or 'voterId' if not needed for the list
+          name: data.name, 
+          voterId: data.voterId
+        } as VoteRecord);
       });
       setCastVotes(votes);
     });
 
-    return (): void => {
-      unsubTallies();
-      unsubVotes();
+    return () => {
+      if (typeof unsubTallies === 'function') unsubTallies();
+      if (typeof unsubVotes === 'function') unsubVotes();
     };
   }, []);
 

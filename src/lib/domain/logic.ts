@@ -1,3 +1,8 @@
+/**
+ * Zenith Architecture: Pure Logic & Controllers
+ * Stateless utility functions for election simulation.
+ */
+
 import { cache } from 'react';
 import { VoterID } from './types';
 
@@ -23,32 +28,18 @@ export function validateVoterId(id: string): id is VoterID {
 }
 
 /**
- * Node 18: Functional Pipe Pattern
- * Provides a type-safe way to compose logic transformations.
- */
-export const pipe = <T>(...fns: ReadonlyArray<(arg: T) => T>) => (value: T): T =>
-  fns.reduce((acc, fn) => fn(acc), value);
-
-/**
  * Sanitizes user input to prevent XSS or injection.
  */
-export const sanitizeInput = (input: string): string => {
+export function sanitizeInput(input: string): string {
   if (!input) return '';
   return input
-    .replace(/<[^>]*>?/gm, '')
-    .replace(/javascript:/gi, '')
-    .replace(/on\w+=/gi, '')
-    .replace(/script/gi, '')
-    .replace(/[^a-zA-Z0-9 ]/g, '')
+    .replace(/<[^>]*>?/gm, '') 
+    .replace(/javascript:/gi, '') 
+    .replace(/on\w+=/gi, '') 
+    .replace(/script/gi, '') 
+    .replace(/[^a-zA-Z0-9 ]/g, '') 
     .trim();
-};
-
-export const normalizeInput = (input: string): string => input.toLowerCase();
-
-/**
- * Composite sanitization pipeline.
- */
-export const cleanInput = pipe(sanitizeInput, normalizeInput);
+}
 
 /**
  * Calculates turnout percentage.
@@ -66,20 +57,11 @@ export function formatHash(hash: string): string {
   return `${hash.substring(0, 8)}...${hash.substring(hash.length - 8)}`;
 }
 
-/** Shape of a vote record returned by the data layer. */
-export interface VoteRecordData {
-  id: string;
-  candidateId: string;
-  timestamp: number;
-  name: string;
-  voterId: string;
-}
-
 /**
  * Singularity Node 8: React 19 / Next.js 15 cache() deduping.
  * Ensures domain mapping only occurs once per request cycle.
  */
-export const mapVoteRecord = cache((data: VoteRecordData): VoteRecordData => {
+export const mapVoteRecord = cache((data: any) => {
   return {
     id: data.id || '',
     candidateId: data.candidateId || '',

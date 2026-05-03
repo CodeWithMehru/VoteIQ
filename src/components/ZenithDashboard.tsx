@@ -1,37 +1,25 @@
 'use client';
 
-import React, { useState,   } from 'react';
-
-type DashboardTab = 'ledger' | 'comparison';
-
-interface BlockchainBlock {
-  readonly i: number;
-  readonly hash: string;
-}
+import { useState } from 'react';
 
 /**
  * Zenith Civic Education Dashboard (Problem Statement Nodes 1, 13)
  * Provides interactive visualizations for vote integrity and global comparisons.
  */
-export default function ZenithDashboard(): React.ReactNode {
-  const [activeTab, setActiveTab] = useState<DashboardTab>('ledger');
-
-  const BLOCKS: readonly BlockchainBlock[] = [1, 2, 3].map((i: number): BlockchainBlock => ({
-    i,
-    hash: `${Math.random().toString(36).substring(2, 15).toUpperCase()}...`
-  })) satisfies readonly BlockchainBlock[];
+export default function ZenithDashboard() {
+  const [activeTab, setActiveTab] = useState<'ledger' | 'comparison'>('ledger');
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-800">
       <div className="flex space-x-4 mb-8 border-b border-gray-200 dark:border-gray-800">
         <button
-          onClick={(): void => setActiveTab('ledger')}
+          onClick={() => setActiveTab('ledger')}
           className={`pb-4 px-2 font-bold text-sm transition-colors ${activeTab === 'ledger' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
         >
           Blockchain Integrity Ledger
         </button>
         <button
-          onClick={(): void => setActiveTab('comparison')}
+          onClick={() => setActiveTab('comparison')}
           className={`pb-4 px-2 font-bold text-sm transition-colors ${activeTab === 'comparison' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
         >
           Global Tech Comparison
@@ -45,18 +33,18 @@ export default function ZenithDashboard(): React.ReactNode {
             Visualizing the cryptographic link between your vote and the immutable election record.
           </p>
           <div className="flex flex-col space-y-4">
-            {BLOCKS.map((block: BlockchainBlock): React.ReactNode => (
-              <div key={block.i} className="flex items-center space-x-4 relative">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center space-x-4">
                 <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-mono text-xs">
-                  #0{block.i}
+                  #0{i}
                 </div>
                 <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
                   <div className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-1">Block Hash</div>
                   <div className="text-xs font-mono text-gray-900 dark:text-gray-100 break-all">
-                    {block.hash}
+                    {Math.random().toString(36).substring(2, 15).toUpperCase()}...
                   </div>
                 </div>
-                {block.i < 3 && <div className="absolute left-[1.5rem] top-12 w-0.5 h-4 bg-blue-200 dark:bg-blue-800 z-10"></div>}
+                {i < 3 && <div className="absolute left-[3.5rem] mt-16 w-0.5 h-4 bg-blue-200 dark:bg-blue-800"></div>}
               </div>
             ))}
           </div>

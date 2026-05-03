@@ -1,28 +1,31 @@
 /**
- * Singularity Node 2: Web Worker for Hashing
+ * VVPAT Hashing Web Worker (Efficiency Node 1)
+ * Offloads SHA-256 calculation to keep the main thread at 60FPS.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ctx: Worker = (self as any);
+self.onmessage = async (e: MessageEvent) => {
+  const { data, visitorId } = e.data;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-ctx.onmessage = async (e: MessageEvent<any>): Promise<void> => {
-  const { data } = e;
+  // Simulation of intensive cryptographic chain calculation
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(`${data}:${visitorId}:${Date.now()}`);
+
   try {
-    const encoder = new TextEncoder();
-    const dataBuffer = encoder.encode(JSON.stringify(data));
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const hashBuffer: ArrayBuffer = await (crypto as any).subtle.digest('SHA-256', dataBuffer);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map((b: number) => b.toString(16).padStart(2, '0')).join('');
-    
-    const fullHash = `VVPAT-${hashHex.substring(0, 16)}-${Date.now()}`;
-    
-    ctx.postMessage({ hash: hashHex, fullHash });
-  } catch (_error: unknown) {
-    ctx.postMessage({ error: 'HASH_WORKER_FAILURE' });
+    const hashHex = hashArray
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase();
+
+    // Artificial delay to simulate complex ledger work if needed
+    // await new Promise(resolve => setTimeout(resolve, 500));
+
+    self.postMessage({
+      hash: hashHex.substring(0, 16),
+      fullHash: hashHex,
+    });
+  } catch (error) {
+    self.postMessage({ error: 'Hashing failed' });
   }
 };
-
-export {};

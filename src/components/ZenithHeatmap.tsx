@@ -4,7 +4,7 @@
  * Zenith Demographic Heatmap (Problem Statement Node 4)
  * Visualizes mock voter participation trends across constituencies.
  */
-export default function ZenithHeatmap(): React.JSX.Element {
+export default function ZenithHeatmap() {
   const regions = [
     { name: 'North District', turnout: 82, trend: '+4%', color: 'bg-blue-600' },
     { name: 'South District', turnout: 45, trend: '-2%', color: 'bg-blue-300' },

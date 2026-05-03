@@ -1,38 +1,36 @@
 import { NextResponse } from 'next/server';
-import { ChatRequestSchema, ValidationException, Result } from '@/lib';
 import { getChatResponse } from '@/lib/infrastructure/gemini';
+import { z } from 'zod';
 
-/**
- * Singularity Architecture: Defensive Chat API
- */
-export async function POST(request: Request): Promise<NextResponse> {
+const ChatSchema = z.object({
+  message: z.string().min(1).max(500),
+});
+
+export async function POST(request: Request) {
   try {
-    const body: unknown = await request.json();
-    const parseResult = ChatRequestSchema.safeParse(body);
+    const body = await request.json();
+    const parseResult = ChatSchema.safeParse(body);
 
     if (!parseResult.success) {
-      throw new ValidationException('Invalid chat request', parseResult.error.format());
+      return NextResponse.json({ error: 'Invalid payload schema', details: parseResult.error }, { status: 400 });
     }
 
     const { message } = parseResult.data;
-    const reply: string = await getChatResponse(message);
 
-    const res: NextResponse = NextResponse.json({ success: true, data: { reply } } satisfies Result<{ reply: string }>);
+    const reply = await getChatResponse(message);
+
+    const res = NextResponse.json({ reply });
     res.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
     return res;
   } catch (error: unknown) {
     console.error('Chat API Error:', error);
-    
-    if (error instanceof ValidationException) {
-      return NextResponse.json({ success: false, error: error.message, details: error.details }, { status: error.statusCode });
+    const err = error as { status?: number; message?: string };
+    if (err?.status === 429 || err?.message?.includes('429') || err?.message?.includes('Quota')) {
+      return NextResponse.json(
+        { error: 'Google Cloud is currently syncing billing quota. Please wait.' },
+        { status: 429 }
+      );
     }
-
-    const errorMessage: string = error instanceof Error ? error.message : 'Failed to process chat request';
-    const isQuotaError: boolean = errorMessage.includes('429') || errorMessage.includes('Quota');
-    
-    return NextResponse.json(
-      { success: false, error: isQuotaError ? 'Google Cloud is currently syncing billing quota. Please wait.' : errorMessage },
-      { status: isQuotaError ? 429 : 500 }
-    );
+    return NextResponse.json({ error: err?.message || 'Failed to process chat request' }, { status: 500 });
   }
 }

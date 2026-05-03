@@ -1,40 +1,45 @@
 import { NextResponse } from 'next/server';
-import { TranslationRequestSchema, ValidationException, Result } from '@/lib';
-import { translateText } from '@/lib/infrastructure/translate';
+import { z } from 'zod';
+const { Translate } = require('@google-cloud/translate').v2;
 
-/**
- * Singularity Architecture: Defensive Translation API
- */
-export async function POST(request: Request): Promise<NextResponse> {
-  let originalText: string = '';
+const TranslateSchema = z.object({
+  texts: z.array(z.string().min(1)).min(1).max(50),
+  targetLanguage: z.string().length(2),
+});
+
+const translate = new Translate({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  credentials: {
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  },
+});
+
+export async function POST(request: Request) {
   try {
-    const body: unknown = await request.json();
-    const parseResult = TranslationRequestSchema.safeParse(body);
+    const body = await request.json();
+    const parseResult = TranslateSchema.safeParse(body);
 
     if (!parseResult.success) {
-      throw new ValidationException('Invalid translation request', parseResult.error.format());
+      return NextResponse.json({ error: 'Invalid payload schema', details: parseResult.error }, { status: 400 });
     }
 
-    const { text, targetLanguage } = parseResult.data;
-    originalText = text;
+    const { texts, targetLanguage } = parseResult.data;
 
     if (targetLanguage === 'en') {
-      return NextResponse.json({ success: true, data: { translation: text } } satisfies Result<{ translation: string }>);
+      return NextResponse.json({ translations: texts });
     }
 
-    const translation: string = await translateText(text, targetLanguage);
+    const response = await translate.translate(texts, targetLanguage);
+    const translations = response[0];
 
-    const res: NextResponse = NextResponse.json({ success: true, data: { translation } } satisfies Result<{ translation: string }>);
+    const res = NextResponse.json({ translations });
     res.headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
     return res;
   } catch (error: unknown) {
     console.error('Translate API Error:', error);
-
-    if (error instanceof ValidationException) {
-      return NextResponse.json({ success: false, error: error.message, details: error.details }, { status: error.statusCode });
-    }
-
     // Graceful fallback to return the original text
-    return NextResponse.json({ success: true, data: { translation: originalText || '' } } satisfies Result<{ translation: string }>);
+    const { texts } = await request.json().catch(() => ({ texts: [] }));
+    return NextResponse.json({ translations: texts || [] });
   }
 }

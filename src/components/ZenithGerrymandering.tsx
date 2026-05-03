@@ -6,13 +6,13 @@ import { useState } from 'react';
  * Zenith Gerrymandering Sandbox (Problem Statement Node 2)
  * Interactive simulation showing how boundary manipulation affects voter outcomes.
  */
-export default function ZenithGerrymandering(): React.JSX.Element {
+export default function ZenithGerrymandering() {
   const [districts, setDistricts] = useState([
     { id: 1, partyA: 60, partyB: 40, size: 'w-1/2' },
     { id: 2, partyA: 40, partyB: 60, size: 'w-1/2' },
   ]);
 
-  const toggleLayout = (): void => {
+  const toggleLayout = () => {
     // Mock redistribution of boundaries
     setDistricts([
       { id: 1, partyA: 80, partyB: 20, size: 'w-1/4' },

@@ -1,23 +1,20 @@
 'use client';
 
-import * as React from 'react';
+import { useState } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import { useAuth } from '@/hooks/useAuth';
 import { useVotes } from '@/hooks/useVotes';
 import { useLanguage } from '@/lib/i18n';
 
-/**
- * Singularity Architecture: Officer Dashboard with Strict Types
- */
-export default function DashboardPage(): React.ReactNode {
-  useAuth();
+export default function DashboardPage() {
+  const { user } = useAuth();
   const { tally, castVotes } = useVotes();
   const { strings } = useLanguage();
-  const [broadcastMessage, setBroadcastMessage] = React.useState<string>('');
-  const [isBroadcasting, setIsBroadcasting] = React.useState<boolean>(false);
-  const [isResetting, setIsResetting] = React.useState<boolean>(false);
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
-  const handleResetElection = async (): Promise<void> => {
+  const handleResetElection = async () => {
     if (
       !window.confirm(
         'NUCLEAR RESET: Are you sure you want to permanently delete all vote records and reset all tallies to zero?'
@@ -31,14 +28,14 @@ export default function DashboardPage(): React.ReactNode {
       if (!res.ok) throw new Error('Reset failed');
       alert('Election data has been completely reset.');
       window.location.reload();
-    } catch (_err: unknown) {
+    } catch (err) {
       alert('Error resetting election data.');
     } finally {
       setIsResetting(false);
     }
   };
 
-  const handleBroadcast = async (e: React.FormEvent): Promise<void> => {
+  const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!broadcastMessage.trim()) return;
 
@@ -51,8 +48,8 @@ export default function DashboardPage(): React.ReactNode {
     alert('Alert broadcasted successfully across the network.');
   };
 
-  const getPercentage = (votes: number): string => {
-    return tally.total === 0 ? '0' : ((votes / tally.total) * 100).toFixed(1);
+  const getPercentage = (votes: number) => {
+    return tally.total === 0 ? 0 : ((votes / tally.total) * 100).toFixed(1);
   };
 
   return (
@@ -79,7 +76,7 @@ export default function DashboardPage(): React.ReactNode {
               onClick={handleResetElection}
               disabled={isResetting}
               className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold py-2.5 px-6 rounded-xl transition-all duration-200 shadow-md flex items-center space-x-2 disabled:opacity-50"
-              aria-label={strings.reset_election || 'Reset Election'}
+              aria-label={strings.reset_election}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -214,7 +211,7 @@ export default function DashboardPage(): React.ReactNode {
             <form onSubmit={handleBroadcast} className="flex-1 flex flex-col">
               <textarea
                 value={broadcastMessage}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void => setBroadcastMessage(e.target.value)}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
                 placeholder="Enter alert message (e.g., 'Voting extended by 1 hour')..."
                 className="w-full flex-1 min-h-[150px] p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4"
                 required

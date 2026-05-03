@@ -1,15 +1,10 @@
-/**
- * Singularity Architecture: Domain Entry Point (CLEAN)
- * Strictly decoupled from infrastructure and IoC to prevent bundle leaks.
- */
-
 export * from './domain/types';
-export * from './domain/branding';
-export * from './domain/interfaces';
-export * from './domain/exceptions';
-export * from './domain/schemas';
 export * from './domain/logic';
-
-// Client-safe infrastructure only
+export * from './domain/security';
+export * from './domain/constants';
 export * from './infrastructure/firebase';
-export * from './infrastructure/wasm-hash';
+export * from './i18n';
+export * from './infrastructure/translate';
+export * from './infrastructure/gemini';
+export * from './infrastructure/bigquery';
+export * from './infrastructure/pubsub';

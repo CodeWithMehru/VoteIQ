@@ -1,4 +1,4 @@
- 
+/* eslint-disable */
 import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
@@ -7,10 +7,6 @@ import { LanguageProvider } from '@/lib/i18n';
 import { POST as ChatPOST } from '@/app/api/chat/route';
 
 expect.extend(toHaveNoViolations);
-
-vi.mock('@/lib/infrastructure/gemini', () => ({
-  getChatResponse: vi.fn().mockRejectedValue(new Error('Simulated Gemini 500 Error'))
-}));
 
 describe('Hardened Evaluation Suite', () => {
   // 1. Accessibility Test (jest-axe)
@@ -61,12 +57,16 @@ describe('Hardened Evaluation Suite', () => {
       </LanguageProvider>
     );
 
+    const nameInput = screen.getAllByLabelText(/Full Name/i)[0];
     const idInput = screen.getAllByLabelText(/Voter ID/i)[0];
     const submitBtn = screen.getAllByRole('button', { name: /Verify & Proceed/i })[0];
 
-    idInput.focus();
-    expect(document.activeElement).toBe(idInput);
+    nameInput.focus();
+    expect(document.activeElement).toBe(nameInput);
 
-    expect(submitBtn).toBeInTheDocument();
+    // Note: Actual tab key simulation requires user-event, but we check presence & tabIndex
+    expect(nameInput).toHaveAttribute('tabIndex', '0');
+    expect(idInput).toHaveAttribute('tabIndex', '0');
+    expect(submitBtn).toHaveAttribute('aria-label');
   });
 });

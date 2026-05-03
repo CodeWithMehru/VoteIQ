@@ -48,7 +48,7 @@ const BoothLocator = dynamic(() => import('@/components/BoothLocator'), {
  * Home: The primary entry point for the VoteIQ Interactive Engine.
  * Refactored for Zenith Purity (Nodes 1, 8).
  */
-export default function Home(): React.JSX.Element {
+export default function Home(): JSX.Element {
   const [mapVisible, setMapVisible] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
 
@@ -80,7 +80,7 @@ export default function Home(): React.JSX.Element {
         </div>
         <h1 
           className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tight mb-8"
-          {...({ fetchPriority: 'high' } as React.HTMLAttributes<HTMLHeadingElement>)}
+          {...{ fetchPriority: 'high' } as any}
         >
           The Interactive <br className="hidden md:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">

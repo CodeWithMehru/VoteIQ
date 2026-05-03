@@ -4,7 +4,7 @@
  * Zenith Threat Model (Problem Statement Node 6)
  * Guided explainer showing how the platform prevents common electoral fraud.
  */
-export default function ZenithThreatModel(): React.JSX.Element {
+export default function ZenithThreatModel() {
   const layers = [
     { name: 'Anonymous Session', status: 'Active', desc: 'Prevents identity tracking via Zero-Knowledge proofs.' },
     { name: 'Atomic Firestore Lock', status: 'Active', desc: 'Blocks double-voting at the database transaction level.' },

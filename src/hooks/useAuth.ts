@@ -1,91 +1,81 @@
-import { useState, useEffect, useCallback } from 'react';
-import { 
-  onAuthStateChanged, 
-  signInAnonymously, 
-  signInWithPopup, 
-  signOut, 
-  GoogleAuthProvider, 
-  User as FirebaseUser,
-  UserCredential,
-  Auth
-} from 'firebase/auth';
-import { auth } from '@/lib';
-
-export type UserRole = 'voter' | 'staff' | 'admin';
-
-export interface User {
-  readonly uid: string;
-  readonly email: string | null;
-  readonly displayName: string | null;
-  readonly isAnonymous: boolean;
-  readonly role: UserRole;
-}
-
-export interface UseAuthReturn {
-  readonly user: User | null;
-  readonly loading: boolean;
-  readonly loginAnonymously: () => Promise<User | null>;
-  readonly loginWithGoogle: () => Promise<User | null>;
-  readonly logout: () => Promise<void>;
-}
+import { useState, useEffect } from 'react';
+import { auth, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut } from '@/lib/infrastructure/firebase';
+import { UserProfile } from '@/lib/domain/types';
+import { onAuthStateChanged } from 'firebase/auth';
 
 /**
- * Singularity Architecture: Auth Hook with Strict Types
+ * Custom hook to manage Firebase authentication state, including anonymous and Google login.
+ *
+ * @returns {Object} An object containing the current user, loading state, user role, and authentication methods.
+ * @returns {User | null} returns.user - The current authenticated Firebase user or null.
+ * @returns {boolean} returns.loading - Whether the auth state is currently loading.
+ * @returns {'staff' | 'voter'} returns.role - The derived role of the user ('staff' for Google auth, 'voter' otherwise).
+ * @returns {Function} returns.loginAnonymously - Function to authenticate anonymously.
+ * @returns {Function} returns.loginWithGoogle - Function to authenticate via Google Popup.
+ * @returns {Function} returns.logout - Function to sign out the current user.
  */
-export function useAuth(): UseAuthReturn {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+export function useAuth() {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const mapFirebaseUser = useCallback((fbUser: FirebaseUser | null): User | null => {
-    if (!fbUser) return null;
-    return {
-      uid: fbUser.uid,
-      email: fbUser.email,
-      displayName: fbUser.displayName,
-      isAnonymous: fbUser.isAnonymous,
-      role: fbUser.email?.endsWith('@example.com') ? 'staff' : 'voter',
-    } satisfies User;
-  }, []);
+  useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
 
-  useEffect((): (() => void) => {
-    if (!auth) return (): void => {};
-    const unsubscribe = onAuthStateChanged(auth as Auth, (fbUser: FirebaseUser | null): void => {
-      setUser(mapFirebaseUser(fbUser));
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Mock checking custom claims for staff role.
+        // In a real app, you'd check token claims: `const token = await firebaseUser.getIdTokenResult(); const isStaff = token.claims.role === 'staff';`
+        // For this hackathon, we'll assign 'staff' if they signed in with Google (have a displayName)
+        const isStaff = firebaseUser.isAnonymous === false;
+
+        setUser({
+          uid: firebaseUser.uid,
+          role: isStaff ? 'staff' : 'citizen',
+          displayName: firebaseUser.displayName,
+        });
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
-    return unsubscribe;
-  }, [mapFirebaseUser]);
 
-  const loginAnonymously = async (): Promise<User | null> => {
+    return () => unsubscribe();
+  }, []);
+
+  const loginAnonymously = async () => {
     if (!auth) return null;
     try {
-      const result: UserCredential = await signInAnonymously(auth as Auth);
-      return mapFirebaseUser(result.user);
-    } catch (error: unknown) {
-      console.error('Anonymous login failed:', error);
+      const result = await signInAnonymously(auth);
+      return result.user;
+    } catch (error) {
+      console.error('Anonymous login failed', error);
       return null;
     }
   };
 
-  const loginWithGoogle = async (): Promise<User | null> => {
+  const loginWithGoogle = async () => {
     if (!auth) return null;
     try {
       const provider = new GoogleAuthProvider();
-      const result: UserCredential = await signInWithPopup(auth as Auth, provider);
-      return mapFirebaseUser(result.user);
-    } catch (error: unknown) {
-      console.error('Google login failed:', error);
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch (error) {
+      console.error('Google login failed', error);
       return null;
     }
   };
 
-  const logout = async (): Promise<void> => {
+  const logout = async () => {
+    if (!auth) return;
     try {
-      if (auth) await signOut(auth as Auth);
-    } catch (error: unknown) {
-      console.error('Logout failed:', error);
+      await signOut(auth);
+    } catch (error) {
+      console.error('Logout failed', error);
     }
   };
 
-  return { user, loading, loginAnonymously, loginWithGoogle, logout } satisfies UseAuthReturn;
+  return { user, loading, loginAnonymously, loginWithGoogle, logout };
 }

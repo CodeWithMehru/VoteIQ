@@ -1,18 +1,9 @@
 'use client';
 
-import React, { useState, useRef, useEffect,   } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '@/lib';
-import { z } from 'zod';
 
-const ChatResponseSchema = z.object({
-  reply: z.string().optional(),
-  error: z.string().optional(),
-});
-
-/**
- * Singularity Architecture: Smart Assistant with Explicit Types
- */
-export default function SmartAssistant(): React.ReactNode {
+export default function SmartAssistant() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -21,77 +12,62 @@ export default function SmartAssistant(): React.ReactNode {
       timestamp: Date.now(),
     },
   ]);
-  const [input, setInput] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = (): void => {
+  const scrollToBottom = () => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   };
 
-  useEffect((): void => {
+  useEffect(() => {
     if (messages.length > 1) {
       scrollToBottom();
     }
   }, [messages]);
 
-  const handleSend = async (e?: React.FormEvent): Promise<void> => {
+  const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: string = input.trim();
+    const userMessage = input.trim();
     setInput('');
-    setMessages((prev: ChatMessage[]): ChatMessage[] => [
-      ...prev,
-      { role: 'user', content: userMessage, timestamp: Date.now() } satisfies ChatMessage,
-    ]);
+    setMessages((prev) => [...prev, { role: 'user', content: userMessage, timestamp: Date.now() }]);
     setIsLoading(true);
 
     try {
-      const res: Response = await fetch('/api/chat', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage }),
       });
 
-      const rawData: unknown = await res.json();
-      const parsed = ChatResponseSchema.safeParse(rawData);
-      
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(parsed.success ? parsed.data.error : 'Failed to get response');
+        throw new Error(data.error || 'Failed to get response');
       }
 
-      setMessages((prev: ChatMessage[]): ChatMessage[] => [
-        ...prev,
-        { 
-          role: 'assistant', 
-          content: (parsed.success ? parsed.data.reply : 'I am sorry, I could not process that.') || '', 
-          timestamp: Date.now() 
-        } satisfies ChatMessage,
-      ]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply, timestamp: Date.now() }]);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Please try again later.';
+      const err = error as { message?: string };
       console.error(error);
-      setMessages((prev: ChatMessage[]): ChatMessage[] => [
+      setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: `Sorry, I encountered an error: ${errorMessage}`,
+          content: `Sorry, I encountered an error: ${err.message || 'Please try again later.'}`,
           timestamp: Date.now(),
-        } satisfies ChatMessage,
+        },
       ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const QUICK_QUESTIONS: readonly string[] = [
-    'How do I register to vote?',
-    'What ID do I need?',
-    'How does an EVM work?',
-  ] as const satisfies readonly string[];
+  const QUICK_QUESTIONS = ['How do I register to vote?', 'What ID do I need?', 'How does an EVM work?'];
 
   return (
     <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/30 flex flex-col h-[500px] overflow-hidden transition-all duration-300">
@@ -111,7 +87,7 @@ export default function SmartAssistant(): React.ReactNode {
         ref={chatContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/50 scroll-smooth"
       >
-        {messages.map((msg: ChatMessage, idx: number): React.ReactNode => (
+        {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`max-w-[85%] rounded-2xl p-4 shadow-sm backdrop-blur-sm transition-all duration-200 ${
@@ -137,10 +113,10 @@ export default function SmartAssistant(): React.ReactNode {
 
       <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
         <div className="flex space-x-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
-          {QUICK_QUESTIONS.map((q: string, idx: number): React.ReactNode => (
+          {QUICK_QUESTIONS.map((q, idx) => (
             <button
               key={idx}
-              onClick={(): void => {
+              onClick={() => {
                 setInput(q);
               }}
               className="flex-shrink-0 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-800/50 dark:text-blue-300 px-3 py-1.5 rounded-full transition-colors border border-blue-100 dark:border-blue-800"
@@ -153,7 +129,7 @@ export default function SmartAssistant(): React.ReactNode {
           <input
             type="text"
             value={input}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about the voting process..."
             className="w-full pl-5 pr-14 py-4 rounded-xl border border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-gray-900 transition-all duration-200"
           />

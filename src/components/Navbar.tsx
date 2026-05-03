@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import LanguageSwitcher from './LanguageSwitcher';
 
-export default function Navbar(): React.JSX.Element {
+export default function Navbar() {
   const { user, loginWithGoogle, logout } = useAuth();
 
   return (
