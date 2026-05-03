@@ -94,13 +94,15 @@ The system uses a strict **Hexagonal Architecture** to decouple business logic f
 ```mermaid
 graph LR
     subgraph Domain
-        VLogic[Voting Logic]
-        ASec[Aegis Security]
+        VLogic["Voting Logic"]
+        ASec["Aegis Security"]
+        AI_Bridge["AI Bridge"]
+        Hash_Bridge["Hash Bridge"]
     end
     subgraph Infrastructure
-        FA[Firebase Admin]
-        GAI[Gemini AI]
-        WASM[WASM Hash]
+        FA["Firebase Admin"]
+        GAI["Gemini AI"]
+        WASM["WASM Hash"]
     end
     FA -->|Implements| VLogic
     GAI -->|Implements| AI_Bridge
