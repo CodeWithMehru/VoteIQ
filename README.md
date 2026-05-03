@@ -27,17 +27,17 @@ VoteIQ simulates a real-world election architecture using lightweight, highly pe
 
 ```mermaid
 graph TD
-    User((Citizen)) -->|Visits| App(VoteIQ App)
-    App -->|Reads Timeline| TL(Education Timeline)
-    App -->|Chats| AI(Gemini AI Assistant)
-    App -->|Finds Booth| Map(Google Maps API)
-    App -->|Verifies ID| Auth(Anonymous Auth)
-    Auth -->|Casts Vote| DB[(Firestore Real-time DB)]
-    DB -->|Triggers| PS(Pub/Sub Event)
-    PS -->|Logs Analytics| BQ(BigQuery Analytics)
-    DB -->|Streams Live| LR(Live Results Dashboard)
-    Officer((Official)) -->|Logs in| OAuth(Google Sign-In)
-    OAuth -->|Accesses| Dashboard(Officer Dashboard)
+    User((Citizen)) -->|Visits| App["VoteIQ App"]
+    App -->|Reads Timeline| TL["Education Timeline"]
+    App -->|Chats| AI["Gemini AI Assistant"]
+    App -->|Finds Booth| Map["Google Maps API"]
+    App -->|Verifies ID| Auth["Anonymous Auth"]
+    Auth -->|Casts Vote| DB[("Firestore Real-time DB")]
+    DB -->|Triggers| PS["Pub/Sub Event"]
+    PS -->|Logs Analytics| BQ["BigQuery Analytics"]
+    DB -->|Streams Live| LR["Live Results Dashboard"]
+    Officer((Official)) -->|Logs in| OAuth["Google Sign-In"]
+    OAuth -->|Accesses| Dashboard["Officer Dashboard"]
     Dashboard -->|Reads| DB
     Dashboard -->|Reads| BQ
 ```
